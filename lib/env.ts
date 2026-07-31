@@ -1,4 +1,7 @@
-const isProduction = process.env.NODE_ENV === "production";
+const isBuildTime = !process.env.NEXT_RUNTIME;
+
+const enforceProduction =
+  process.env.NODE_ENV === "production" && !isBuildTime;
 
 const INSECURE_JWT_SECRETS = new Set([
   "",
@@ -9,18 +12,18 @@ const INSECURE_JWT_SECRETS = new Set([
 
 export function requireEnv(key: string): string {
   const value = process.env[key];
-  if (!value || value.trim() === "") {
+  if (enforceProduction && (!value || value.trim() === "")) {
     throw new Error(
       `Missing required environment variable: ${key}. ` +
         "Set it in your environment or .env file before deploying."
     );
   }
-  return value;
+  return value ?? "";
 }
 
 export function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET ?? "";
-  if (isProduction && INSECURE_JWT_SECRETS.has(secret)) {
+  if (enforceProduction && INSECURE_JWT_SECRETS.has(secret)) {
     throw new Error(
       "JWT_SECRET must be set to a strong, unique random string in production. " +
         "Generate one with: openssl rand -base64 48"
@@ -31,7 +34,7 @@ export function getJwtSecret(): string {
 
 export function getDatabaseConfig(): { url: string; authToken?: string } {
   const url = process.env.TURSO_DATABASE_URL;
-  if (isProduction && !url) {
+  if (enforceProduction && !url) {
     throw new Error(
       "Missing required environment variable: TURSO_DATABASE_URL. " +
         "Create a Turso database and copy its libsql:// URL."
@@ -51,7 +54,7 @@ export function getCloudinaryConfig(): {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME ?? "";
   const apiKey = process.env.CLOUDINARY_API_KEY ?? "";
   const apiSecret = process.env.CLOUDINARY_API_SECRET ?? "";
-  if (isProduction && (!cloudName || !apiKey || !apiSecret)) {
+  if (enforceProduction && (!cloudName || !apiKey || !apiSecret)) {
     throw new Error(
       "Missing required environment variable(s): CLOUDINARY_CLOUD_NAME, " +
         "CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET. Add your Cloudinary credentials."

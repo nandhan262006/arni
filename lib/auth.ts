@@ -3,7 +3,9 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { getJwtSecret } from "@/lib/env";
 
-const JWT_SECRET = new TextEncoder().encode(getJwtSecret());
+function getJwtKey(): Uint8Array {
+  return new TextEncoder().encode(getJwtSecret());
+}
 
 const COOKIE_NAME = "arni_admin_token";
 
@@ -23,12 +25,12 @@ export async function createToken(userId: number): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("24h")
-    .sign(JWT_SECRET);
+    .sign(getJwtKey());
 }
 
 export async function verifyToken(token: string): Promise<{ userId: number } | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtKey());
     return payload as { userId: number };
   } catch {
     return null;
