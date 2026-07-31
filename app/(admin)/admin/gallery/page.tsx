@@ -37,6 +37,8 @@ export default function GalleryPage() {
   }, [filter]);
 
   useEffect(() => {
+    // State updates happen after the awaited fetch, not synchronously.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadImages();
   }, [loadImages]);
 

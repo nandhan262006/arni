@@ -32,13 +32,18 @@ export async function proxy(request: NextRequest) {
   }
 
   if (ADMIN_PATHS.some((p) => pathname.startsWith(p))) {
-    const token = request.cookies.get("arni_admin_token")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const session = await verifyToken(token);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const isPublicContactSubmission =
+      pathname === "/api/messages" && request.method === "POST";
+
+    if (!isPublicContactSubmission) {
+      const token = request.cookies.get("arni_admin_token")?.value;
+      if (!token) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      const session = await verifyToken(token);
+      if (!session) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
     }
   }
 

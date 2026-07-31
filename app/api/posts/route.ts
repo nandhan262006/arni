@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const published = searchParams.get("published");
     const all = searchParams.get("all");
 
-    let query = db.select().from(posts).orderBy(desc(posts.createdAt));
+    const query = db.select().from(posts).orderBy(desc(posts.createdAt));
 
     if (!all && published !== "true") {
       return NextResponse.json(await query);

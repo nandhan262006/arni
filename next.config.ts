@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const videoCdnUrl = process.env.VIDEO_CDN_URL?.replace(/\/+$/, "");
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -16,6 +18,17 @@ const nextConfig: NextConfig = {
         hostname: "arniphotography.in",
       },
     ],
+  },
+  async rewrites() {
+    if (!videoCdnUrl) {
+      return [];
+    }
+    return [
+      {
+        source: "/videos/:path*",
+        destination: `${videoCdnUrl}/:path*`,
+      },
+    ];
   },
 };
 

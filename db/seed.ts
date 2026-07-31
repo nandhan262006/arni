@@ -1,25 +1,35 @@
 import { createClient } from "@libsql/client";
 import bcrypt from "bcryptjs";
+import { getDatabaseConfig } from "../lib/env";
 
 async function seed() {
-  const url = process.env.TURSO_DATABASE_URL || "file:./local.db";
-  const authToken = process.env.TURSO_AUTH_TOKEN;
-
+  const { url, authToken } = getDatabaseConfig();
   const client = createClient({ url, authToken });
 
-  const passwordHash = await bcrypt.hash("admin123", 12);
+  const username = process.env.ADMIN_USERNAME || "admin";
+  const password = process.env.ADMIN_PASSWORD || "admin123";
+
+  if (process.env.NODE_ENV === "production" && !process.env.ADMIN_PASSWORD) {
+    console.error(
+      "Refusing to seed with the default password in production. " +
+        "Set ADMIN_PASSWORD to a strong password before running db:seed."
+    );
+    process.exit(1);
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
 
   const existing = await client.execute(
     "SELECT id FROM users WHERE username = ?",
-    ["admin"]
+    [username]
   );
 
   if (existing.rows.length === 0) {
     await client.execute(
       "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
-      ["admin", passwordHash, new Date().toISOString()]
+      [username, passwordHash, new Date().toISOString()]
     );
-    console.log("Admin user created: admin / admin123");
+    console.log(`Admin user created: ${username}`);
   } else {
     console.log("Admin user already exists");
   }

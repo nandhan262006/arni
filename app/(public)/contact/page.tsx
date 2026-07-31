@@ -1,17 +1,40 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import toast from "react-hot-toast";
 
+const STUDIO_COORDS = "17.7238354,83.318415";
+
+const DEFAULT_MAP_EMBED =
+  "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3800.2836758166526!2d83.318415!3d17.7238354!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a39430ae4b02f0d%3A0xd205685c2e7d04b0!2sArni%20Photography%20%7C%20Best%20wedding%20photographer%20%7C%20Top%20photographer%20in%20vizag%20%7C%20candid%20photographer!5e0!3m2!1sen!2sin!4v1722000000000!5m2!1sen!2sin";
+
 export default function ContactPage() {
-  const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", message: "", website: "" });
   const [sending, setSending] = useState(false);
+  const [mapEmbed, setMapEmbed] = useState(DEFAULT_MAP_EMBED);
+
+  useEffect(() => {
+    fetch("/api/public/settings")
+      .then((r) => r.json())
+      .then((data) => {
+        const embed = typeof data === "object" && data !== null ? data.google_maps_embed : null;
+        if (typeof embed === "string" && embed.includes("google.com/maps")) {
+          setMapEmbed(embed);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (form.website) {
+      toast.success("Message sent! We'll get back to you soon.");
+      setForm({ name: "", email: "", phone: "", message: "", website: "" });
+      return;
+    }
     setSending(true);
     try {
       const res = await fetch("/api/messages", {
@@ -21,7 +44,7 @@ export default function ContactPage() {
       });
       if (!res.ok) throw new Error("Failed");
       toast.success("Message sent! We'll get back to you soon.");
-      setForm({ name: "", email: "", phone: "", message: "" });
+      setForm({ name: "", email: "", phone: "", message: "", website: "" });
     } catch {
       toast.error("Failed to send message. Please try again.");
     } finally {
@@ -76,6 +99,20 @@ export default function ContactPage() {
               <p className="text-sm text-muted mb-8">We&apos;ll get back to you within 24 hours.</p>
 
               <form onSubmit={handleSubmit} className="space-y-5">
+                <div
+                  aria-hidden="true"
+                  className="absolute left-[-9999px] top-[-9999px] h-0 w-0 overflow-hidden"
+                >
+                  <label htmlFor="website">Leave this field empty</label>
+                  <input
+                    id="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={form.website}
+                    onChange={(e) => setForm({ ...form, website: e.target.value })}
+                  />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-[11px] text-muted/60 mb-2 tracking-wider uppercase">Name *</label>
@@ -209,18 +246,26 @@ export default function ContactPage() {
             </GlassPanel>
 
             {/* Map */}
-            <div className="glass rounded-xl overflow-hidden h-56 relative">
+            <div className="glass rounded-xl overflow-hidden h-64 relative">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3800.2836758166526!2d83.31608907495897!3d17.71860768322161!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a3959e4fc1d6bc3%3A0xb25faa13e2bbcf3!2sSiripuram%2C%20Visakhapatnam%2C%20Andhra%20Pradesh!5e0!3m2!1sen!2sin!4v1690000000000!5m2!1sen!2sin"
+                src={mapEmbed}
                 width="100%"
                 height="100%"
                 style={{ border: 0, filter: "grayscale(0.6) contrast(1.1)" }}
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Arni Photography Location"
+                title="Arni Photography Studio Location"
               />
             </div>
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${STUDIO_COORDS}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-center px-6 py-3.5 border border-gold/30 text-gold rounded-full hover:bg-gold/10 hover:border-gold/50 transition-all duration-300 text-[11px] tracking-[0.15em] uppercase font-semibold"
+            >
+              Get Directions
+            </a>
           </motion.div>
         </div>
       </div>
