@@ -19,11 +19,11 @@ const siteUrl = getSiteUrl();
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Arni Photography | Best Photographers in Vizag",
+    default: "Arni Photography | Vizag's Finest Wedding & Candid Photography",
     template: "%s | Arni Photography",
   },
   description:
-    "Capture timeless moments with Arni Photography in Visakhapatnam. We specialize in wedding, candid, and event photography. 12+ years of cinematic storytelling. Book your session today!",
+    "Vizag's finest wedding and candid photography studio. 12+ years of cinematic storytelling in Visakhapatnam — timeless weddings, editorial albums, and event coverage. Book the city's most trusted photographers today.",
   applicationName: "Arni Photography",
   alternates: {
     canonical: "/",
@@ -32,9 +32,9 @@ export const metadata: Metadata = {
     type: "website",
     url: siteUrl,
     siteName: "Arni Photography",
-    title: "Arni Photography | Best Photographers in Vizag",
+    title: "Arni Photography | Vizag's Finest Wedding & Candid Photography",
     description:
-      "Wedding, candid and event photography in Visakhapatnam. 12+ years of cinematic storytelling.",
+      "Visakhapatnam's finest wedding, candid, and event photography. 12+ years of cinematic storytelling — book Vizag's most trusted studio today.",
     locale: "en_IN",
     images: [
       {
@@ -47,9 +47,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Arni Photography | Best Photographers in Vizag",
+    title: "Arni Photography | Vizag's Finest Photography",
     description:
-      "Wedding, candid and event photography in Visakhapatnam. 12+ years of cinematic storytelling.",
+      "Visakhapatnam's finest wedding, candid, and event photography. 12+ years of cinematic storytelling — book Vizag's most trusted studio today.",
     images: [`${siteUrl}/images/hero/01.jpg`],
   },
   icons: {

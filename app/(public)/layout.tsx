@@ -5,9 +5,9 @@ import { getSiteUrl } from "@/lib/env";
 const siteUrl = getSiteUrl();
 
 export const metadata: Metadata = {
-  title: "Arni Photography | Best Photographers in Vizag",
+  title: "Arni Photography | Vizag's Finest Wedding & Candid Photography",
   description:
-    "Capture timeless moments with Arni Photography in Visakhapatnam. Wedding, candid, event photography. 12+ years of cinematic storytelling.",
+    "Vizag's finest wedding and candid photography studio. 12+ years of cinematic storytelling in Visakhapatnam — timeless weddings, editorial albums, and event coverage. Book the city's most trusted photographers today.",
   alternates: {
     canonical: "/",
   },
@@ -17,6 +17,8 @@ const localBusinessJsonLd = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   name: "Arni Photography",
+  description:
+    "Vizag's finest wedding and candid photography studio — 12+ years of cinematic storytelling in Visakhapatnam.",
   image: `${siteUrl}/images/logos/logo-header.png`,
   url: siteUrl,
   telephone: "+918008948977",

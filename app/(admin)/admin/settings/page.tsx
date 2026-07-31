@@ -36,7 +36,7 @@ const DEFAULTS: Record<string, string> = {
   instagram_url: "https://www.instagram.com/arniphotographyy/",
   facebook_url: "https://www.facebook.com/Arunikitha/",
   youtube_url: "https://www.youtube.com/channel/UC4HWnC-vrF6Hq9urwDnnARA",
-  seo_title: "Arni Photography | Best Photographers in Vizag",
+  seo_title: "Arni Photography | Vizag's Finest Wedding & Candid Photography",
   seo_description: "Capture timeless moments with Arni Photography in Visakhapatnam. We specialize in wedding, candid, and event photography. Book your session today!",
 };
 
