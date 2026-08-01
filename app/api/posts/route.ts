@@ -37,13 +37,23 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    body.slug =
+    const slug =
       body.slug ||
-      body.title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-    const [result] = await db.insert(posts).values(body).returning();
+      (typeof body.title === "string"
+        ? body.title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, "")
+        : "");
+    const allowed = {
+      title: body.title,
+      slug,
+      excerpt: body.excerpt ?? "",
+      content: body.content ?? "",
+      coverImage: body.coverImage ?? null,
+      published: body.published ?? false,
+    };
+    const [result] = await db.insert(posts).values(allowed).returning();
     return NextResponse.json(result, { status: 201 });
   } catch {
     return NextResponse.json(

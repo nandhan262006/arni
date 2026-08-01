@@ -10,10 +10,12 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
+    const allowed: Record<string, unknown> = {};
+    if ("read" in body) allowed.read = body.read;
     const [result] = await db
       .update(messages)
-      .set(body)
-      .where(eq(messages.id, parseInt(id)))
+      .set(allowed)
+      .where(eq(messages.id, parseInt(id, 10)))
       .returning();
     return NextResponse.json(result);
   } catch {
@@ -30,7 +32,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await db.delete(messages).where(eq(messages.id, parseInt(id)));
+    await db.delete(messages).where(eq(messages.id, parseInt(id, 10)));
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(

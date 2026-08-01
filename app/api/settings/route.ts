@@ -15,12 +15,27 @@ export async function GET() {
   }
 }
 
+const ALLOWED_KEYS = new Set([
+  "google_maps_embed",
+  "contact_email",
+  "contact_phone",
+  "studio_address",
+  "instagram_url",
+  "facebook_url",
+  "youtube_url",
+  "site_title",
+  "site_description",
+]);
+
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const settings = Array.isArray(body) ? body : [body];
 
     for (const setting of settings) {
+      if (!setting || typeof setting.key !== "string" || typeof setting.value !== "string") continue;
+      if (!ALLOWED_KEYS.has(setting.key)) continue;
+
       const existing = await db
         .select()
         .from(siteSettings)

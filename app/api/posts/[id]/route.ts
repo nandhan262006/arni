@@ -12,7 +12,7 @@ export async function GET(
     const [result] = await db
       .select()
       .from(posts)
-      .where(eq(posts.id, parseInt(id)))
+      .where(eq(posts.id, parseInt(id, 10)))
       .limit(1);
     if (!result) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -33,11 +33,15 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    body.updatedAt = new Date().toISOString();
+    const allowed: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+    const fields = ["title", "slug", "excerpt", "content", "coverImage", "published"] as const;
+    for (const f of fields) {
+      if (f in body) allowed[f] = body[f];
+    }
     const [result] = await db
       .update(posts)
-      .set(body)
-      .where(eq(posts.id, parseInt(id)))
+      .set(allowed)
+      .where(eq(posts.id, parseInt(id, 10)))
       .returning();
     return NextResponse.json(result);
   } catch {

@@ -29,8 +29,7 @@ export default function GalleryPage() {
       const res = await fetch(`/api/gallery?category=${filter}`);
       const data = await res.json();
       setImages(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error(err);
+    } catch {
     } finally {
       setLoading(false);
     }

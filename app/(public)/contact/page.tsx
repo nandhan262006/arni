@@ -21,8 +21,13 @@ export default function ContactPage() {
       .then((r) => r.json())
       .then((data) => {
         const embed = typeof data === "object" && data !== null ? data.google_maps_embed : null;
-        if (typeof embed === "string" && embed.includes("google.com/maps")) {
-          setMapEmbed(embed);
+        if (typeof embed === "string") {
+          try {
+            const url = new URL(embed);
+            if (url.hostname.endsWith("google.com")) {
+              setMapEmbed(embed);
+            }
+          } catch {}
         }
       })
       .catch(() => {});

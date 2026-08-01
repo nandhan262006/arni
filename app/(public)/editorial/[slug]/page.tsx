@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import DOMPurify from "dompurify";
 
 interface Post {
   id: number;
@@ -125,7 +126,7 @@ export default function EditorialPostPage() {
                 prose-a:text-gold prose-a:no-underline hover:prose-a:text-gold-light
                 prose-img:rounded-xl prose-img:w-full
                 prose-blockquote:border-gold/30 prose-blockquote:text-cream/60 prose-blockquote:italic"
-              dangerouslySetInnerHTML={{ __html: post.content }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }}
             />
           </div>
 

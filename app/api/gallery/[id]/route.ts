@@ -10,10 +10,15 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
+    const allowed: Record<string, unknown> = {};
+    const fields = ["cloudinaryId", "url", "thumbnailUrl", "width", "height", "alt", "category", "featured", "order"] as const;
+    for (const f of fields) {
+      if (f in body) allowed[f] = body[f];
+    }
     const [result] = await db
       .update(galleryImages)
-      .set(body)
-      .where(eq(galleryImages.id, parseInt(id)))
+      .set(allowed)
+      .where(eq(galleryImages.id, parseInt(id, 10)))
       .returning();
     return NextResponse.json(result);
   } catch {
@@ -32,7 +37,7 @@ export async function DELETE(
     const { id } = await params;
     await db
       .delete(galleryImages)
-      .where(eq(galleryImages.id, parseInt(id)));
+      .where(eq(galleryImages.id, parseInt(id, 10)));
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(

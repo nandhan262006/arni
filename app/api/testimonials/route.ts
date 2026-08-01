@@ -17,7 +17,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const [result] = await db.insert(testimonials).values(body).returning();
+    const allowed = {
+      clientName: body.clientName,
+      event: body.event ?? "",
+      rating: body.rating ?? 5,
+      text: body.text,
+      avatarUrl: body.avatarUrl ?? null,
+    };
+    const [result] = await db.insert(testimonials).values(allowed).returning();
     return NextResponse.json(result, { status: 201 });
   } catch {
     return NextResponse.json(

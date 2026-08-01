@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (typeof body.website === "string" && body.website.length > 0) {
+  if ("website" in body && typeof body.website === "string" && body.website.length > 0) {
     return NextResponse.json({ success: true }, { status: 201 });
   }
 

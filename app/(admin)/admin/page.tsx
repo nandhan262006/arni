@@ -59,8 +59,7 @@ export default function AdminDashboard() {
           messages: Array.isArray(msgs) ? msgs.length : 0,
           unreadMessages: Array.isArray(unreadMsgs) ? unreadMsgs.length : 0,
         });
-      } catch (err) {
-        console.error(err);
+      } catch {
       } finally {
         setLoading(false);
       }

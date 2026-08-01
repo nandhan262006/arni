@@ -34,7 +34,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const [result] = await db.insert(films).values(body).returning();
+    const allowed = {
+      title: body.title ?? "",
+      description: body.description ?? "",
+      videoUrl: body.videoUrl,
+      thumbnailUrl: body.thumbnailUrl ?? null,
+      category: body.category ?? "modern",
+      featured: body.featured ?? false,
+      order: body.order ?? 0,
+    };
+    const [result] = await db.insert(films).values(allowed).returning();
     return NextResponse.json(result, { status: 201 });
   } catch {
     return NextResponse.json(

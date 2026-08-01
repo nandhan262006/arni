@@ -34,10 +34,20 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const [result] = await db.insert(galleryImages).values(body).returning();
+    const allowed = {
+      cloudinaryId: body.cloudinaryId,
+      url: body.url,
+      thumbnailUrl: body.thumbnailUrl ?? null,
+      width: body.width ?? null,
+      height: body.height ?? null,
+      alt: body.alt ?? "",
+      category: body.category ?? "wedding",
+      featured: body.featured ?? false,
+      order: body.order ?? 0,
+    };
+    const [result] = await db.insert(galleryImages).values(allowed).returning();
     return NextResponse.json(result, { status: 201 });
-  } catch (error) {
-    console.error("Failed to create gallery image:", error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to create gallery image" },
       { status: 500 }

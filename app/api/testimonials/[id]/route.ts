@@ -10,10 +10,15 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
+    const allowed: Record<string, unknown> = {};
+    const fields = ["clientName", "event", "rating", "text", "avatarUrl"] as const;
+    for (const f of fields) {
+      if (f in body) allowed[f] = body[f];
+    }
     const [result] = await db
       .update(testimonials)
-      .set(body)
-      .where(eq(testimonials.id, parseInt(id)))
+      .set(allowed)
+      .where(eq(testimonials.id, parseInt(id, 10)))
       .returning();
     return NextResponse.json(result);
   } catch {
@@ -30,7 +35,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await db.delete(testimonials).where(eq(testimonials.id, parseInt(id)));
+    await db.delete(testimonials).where(eq(testimonials.id, parseInt(id, 10)));
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(

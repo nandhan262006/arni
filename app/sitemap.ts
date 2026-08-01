@@ -19,27 +19,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let dynamicRoutes: MetadataRoute.Sitemap = [];
   try {
     const { db } = await import("@/db");
-    const { posts, films } = await import("@/db/schema");
+    const { posts } = await import("@/db/schema");
     const { eq } = await import("drizzle-orm");
 
     const publishedPosts = await db
       .select({ slug: posts.slug })
       .from(posts)
       .where(eq(posts.published, true));
-    const allFilms = await db.select({ id: films.id }).from(films);
 
-    dynamicRoutes = [
-      ...publishedPosts.map((post) => ({
-        url: `${siteUrl}/editorial/${post.slug}`,
-        changeFrequency: "monthly" as const,
-        priority: 0.6,
-      })),
-      ...allFilms.map(() => ({
-        url: `${siteUrl}/films`,
-        changeFrequency: "monthly" as const,
-        priority: 0.5,
-      })),
-    ];
+    dynamicRoutes = publishedPosts.map((post) => ({
+      url: `${siteUrl}/editorial/${post.slug}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    }));
   } catch {
     // If the DB is unreachable (e.g. during a first deploy before migrations),
     // fall back to static routes only rather than failing the whole sitemap.
