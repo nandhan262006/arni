@@ -18,14 +18,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let dynamicRoutes: MetadataRoute.Sitemap = [];
   try {
-    const { db } = await import("@/db");
-    const { posts } = await import("@/db/schema");
-    const { eq } = await import("drizzle-orm");
+    const { prisma } = await import("@/db");
 
-    const publishedPosts = await db
-      .select({ slug: posts.slug })
-      .from(posts)
-      .where(eq(posts.published, true));
+    const publishedPosts = await prisma.post.findMany({
+      where: { published: true },
+      select: { slug: true },
+    });
 
     dynamicRoutes = publishedPosts.map((post) => ({
       url: `${siteUrl}/editorial/${post.slug}`,

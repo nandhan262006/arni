@@ -1,31 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { testimonials } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { prisma } from "@/db";
+import { requireApiAuth, jsonError, isNotFoundError } from "@/lib/api";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authError = await requireApiAuth();
+    if (authError) return authError;
+
     const { id } = await params;
     const body = await request.json();
-    const allowed: Record<string, unknown> = {};
+    const data: Record<string, unknown> = {};
     const fields = ["clientName", "event", "rating", "text", "avatarUrl"] as const;
     for (const f of fields) {
-      if (f in body) allowed[f] = body[f];
+      if (f in body) data[f] = body[f];
     }
-    const [result] = await db
-      .update(testimonials)
-      .set(allowed)
-      .where(eq(testimonials.id, parseInt(id, 10)))
-      .returning();
+    const result = await prisma.testimonial.update({
+      where: { id: parseInt(id, 10) },
+      data,
+    });
     return NextResponse.json(result);
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to update testimonial" },
-      { status: 500 }
-    );
+  } catch (err) {
+    if (isNotFoundError(err)) return jsonError("Not found", 404);
+    return jsonError("Failed to update testimonial");
   }
 }
 
@@ -34,13 +33,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authError = await requireApiAuth();
+    if (authError) return authError;
+
     const { id } = await params;
-    await db.delete(testimonials).where(eq(testimonials.id, parseInt(id, 10)));
+    await prisma.testimonial.delete({ where: { id: parseInt(id, 10) } });
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to delete testimonial" },
-      { status: 500 }
-    );
+  } catch (err) {
+    if (isNotFoundError(err)) return jsonError("Not found", 404);
+    return jsonError("Failed to delete testimonial");
   }
 }

@@ -46,21 +46,38 @@ export function getDatabaseConfig(): { url: string; authToken?: string } {
   };
 }
 
-export function getCloudinaryConfig(): {
-  cloudName: string;
-  apiKey: string;
-  apiSecret: string;
-} {
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME ?? "";
-  const apiKey = process.env.CLOUDINARY_API_KEY ?? "";
-  const apiSecret = process.env.CLOUDINARY_API_SECRET ?? "";
-  if (enforceProduction && (!cloudName || !apiKey || !apiSecret)) {
+export interface R2Config {
+  accountId: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucketName: string;
+  publicUrl?: string;
+  endpoint: string;
+}
+
+export function getR2Config(): R2Config {
+  const accountId = process.env.R2_ACCOUNT_ID ?? "";
+  const accessKeyId = process.env.R2_ACCESS_KEY_ID ?? "";
+  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY ?? "";
+  const bucketName = process.env.R2_BUCKET_NAME ?? "";
+  if (
+    enforceProduction &&
+    (!accountId || !accessKeyId || !secretAccessKey || !bucketName)
+  ) {
     throw new Error(
-      "Missing required environment variable(s): CLOUDINARY_CLOUD_NAME, " +
-        "CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET. Add your Cloudinary credentials."
+      "Missing required environment variable(s): R2_ACCOUNT_ID, " +
+        "R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME. " +
+        "Create an R2 bucket and generate an access key in Cloudflare."
     );
   }
-  return { cloudName, apiKey, apiSecret };
+  return {
+    accountId,
+    accessKeyId,
+    secretAccessKey,
+    bucketName,
+    publicUrl: process.env.R2_PUBLIC_URL?.replace(/\/+$/, "") || undefined,
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+  };
 }
 
 export function getSiteUrl(): string {

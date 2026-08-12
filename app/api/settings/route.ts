@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { siteSettings } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { prisma } from "@/db";
+import { requireApiAuth, jsonError } from "@/lib/api";
 
 export async function GET() {
   try {
-    const result = await db.select().from(siteSettings);
+    const result = await prisma.siteSetting.findMany();
     return NextResponse.json(result);
   } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch settings" },
-      { status: 500 }
-    );
+    return jsonError("Failed to fetch settings");
   }
 }
 
@@ -25,10 +21,22 @@ const ALLOWED_KEYS = new Set([
   "youtube_url",
   "site_title",
   "site_description",
+  "hero_title",
+  "hero_subtitle",
+  "about_text",
+  "about_tagline",
+  "address",
+  "phone",
+  "email",
+  "seo_title",
+  "seo_description",
 ]);
 
 export async function PUT(request: NextRequest) {
   try {
+    const authError = await requireApiAuth();
+    if (authError) return authError;
+
     const body = await request.json();
     const settings = Array.isArray(body) ? body : [body];
 
@@ -36,28 +44,16 @@ export async function PUT(request: NextRequest) {
       if (!setting || typeof setting.key !== "string" || typeof setting.value !== "string") continue;
       if (!ALLOWED_KEYS.has(setting.key)) continue;
 
-      const existing = await db
-        .select()
-        .from(siteSettings)
-        .where(eq(siteSettings.key, setting.key))
-        .limit(1);
-
-      if (existing.length > 0) {
-        await db
-          .update(siteSettings)
-          .set({ value: setting.value })
-          .where(eq(siteSettings.key, setting.key));
-      } else {
-        await db.insert(siteSettings).values(setting);
-      }
+      await prisma.siteSetting.upsert({
+        where: { key: setting.key },
+        update: { value: setting.value },
+        create: { key: setting.key, value: setting.value },
+      });
     }
 
-    const result = await db.select().from(siteSettings);
+    const result = await prisma.siteSetting.findMany();
     return NextResponse.json(result);
   } catch {
-    return NextResponse.json(
-      { error: "Failed to update settings" },
-      { status: 500 }
-    );
+    return jsonError("Failed to update settings");
   }
 }

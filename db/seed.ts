@@ -1,10 +1,12 @@
-import { createClient } from "@libsql/client";
+import { PrismaClient } from "../generated/prisma/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import bcrypt from "bcryptjs";
 import { getDatabaseConfig } from "../lib/env";
 
 async function seed() {
   const { url, authToken } = getDatabaseConfig();
-  const client = createClient({ url, authToken });
+  const adapter = new PrismaLibSql({ url, authToken });
+  const prisma = new PrismaClient({ adapter });
 
   const username = process.env.ADMIN_USERNAME || "admin";
   const password = process.env.ADMIN_PASSWORD || "admin123";
@@ -19,22 +21,16 @@ async function seed() {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  const existing = await client.execute(
-    "SELECT id FROM users WHERE username = ?",
-    [username]
-  );
+  const existing = await prisma.user.findUnique({ where: { username } });
 
-  if (existing.rows.length === 0) {
-    await client.execute(
-      "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
-      [username, passwordHash, new Date().toISOString()]
-    );
+  if (!existing) {
+    await prisma.user.create({ data: { username, passwordHash } });
     console.log(`Admin user created: ${username}`);
   } else {
     console.log("Admin user already exists");
   }
 
-  client.close();
+  await prisma.$disconnect();
 }
 
 seed().catch((err) => {

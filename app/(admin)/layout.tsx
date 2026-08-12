@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function AdminLayout({
   children,
@@ -9,19 +9,35 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isLoginPage = pathname === "/login";
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     fetch("/api/auth/me")
       .then((r) => {
-        if (!r.ok) {
-          router.push("/login");
+        if (cancelled) return;
+        if (r.ok) {
+          if (isLoginPage) {
+            router.replace("/admin");
+          } else {
+            setLoading(false);
+          }
         } else {
           setLoading(false);
+          if (!isLoginPage) router.replace("/login");
         }
       })
-      .catch(() => router.push("/login"));
-  }, [router]);
+      .catch(() => {
+        if (cancelled) return;
+        setLoading(false);
+        if (!isLoginPage) router.replace("/login");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [router, pathname, isLoginPage]);
 
   if (loading) {
     return (
@@ -29,6 +45,10 @@ export default function AdminLayout({
         <div className="animate-spin w-8 h-8 border-2 border-gold border-t-transparent rounded-full" />
       </div>
     );
+  }
+
+  if (isLoginPage) {
+    return <div className="min-h-screen bg-bg">{children}</div>;
   }
 
   return (

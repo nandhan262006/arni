@@ -1,28 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { messages } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { prisma } from "@/db";
+import { requireApiAuth, jsonError, isNotFoundError } from "@/lib/api";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authError = await requireApiAuth();
+    if (authError) return authError;
+
     const { id } = await params;
     const body = await request.json();
-    const allowed: Record<string, unknown> = {};
-    if ("read" in body) allowed.read = body.read;
-    const [result] = await db
-      .update(messages)
-      .set(allowed)
-      .where(eq(messages.id, parseInt(id, 10)))
-      .returning();
+    const data: Record<string, unknown> = {};
+    if ("read" in body) data.read = body.read;
+    const result = await prisma.message.update({
+      where: { id: parseInt(id, 10) },
+      data,
+    });
     return NextResponse.json(result);
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to update message" },
-      { status: 500 }
-    );
+  } catch (err) {
+    if (isNotFoundError(err)) return jsonError("Not found", 404);
+    return jsonError("Failed to update message");
   }
 }
 
@@ -31,13 +30,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authError = await requireApiAuth();
+    if (authError) return authError;
+
     const { id } = await params;
-    await db.delete(messages).where(eq(messages.id, parseInt(id, 10)));
+    await prisma.message.delete({ where: { id: parseInt(id, 10) } });
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to delete message" },
-      { status: 500 }
-    );
+  } catch (err) {
+    if (isNotFoundError(err)) return jsonError("Not found", 404);
+    return jsonError("Failed to delete message");
   }
 }

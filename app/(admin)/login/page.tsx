@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -18,7 +17,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ password }),
       });
 
       if (!res.ok) {
@@ -47,17 +46,6 @@ export default function LoginPage() {
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm text-muted mb-1">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-2.5 bg-surface-alt border border-border rounded-lg text-cream focus:border-gold focus:outline-none transition-colors"
-              required
-              autoFocus
-            />
-          </div>
           <div>
             <label className="block text-sm text-muted mb-1">Password</label>
             <input

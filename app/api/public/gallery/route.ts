@@ -1,39 +1,29 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { galleryImages } from "@/db/schema";
-import { asc, eq, and } from "drizzle-orm";
+import { prisma } from "@/db";
+import { jsonError } from "@/lib/api";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
     const featured = searchParams.get("featured");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const limit = Math.min(
+      Math.max(parseInt(searchParams.get("limit") || "50") || 50, 1),
+      100
+    );
 
-    const conditions = [];
+    const where: { category?: string; featured?: boolean } = {};
+    if (category && category !== "all") where.category = category;
+    if (featured === "true") where.featured = true;
 
-    if (category && category !== "all") {
-      conditions.push(eq(galleryImages.category, category));
-    }
-    if (featured === "true") {
-      conditions.push(eq(galleryImages.featured, true));
-    }
-
-    let query = db.select().from(galleryImages).$dynamic();
-
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    const result = await query
-      .orderBy(asc(galleryImages.order))
-      .limit(limit);
+    const result = await prisma.galleryImage.findMany({
+      where: Object.keys(where).length > 0 ? where : undefined,
+      orderBy: { order: "asc" },
+      take: limit,
+    });
 
     return NextResponse.json(result);
   } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch gallery" },
-      { status: 500 }
-    );
+    return jsonError("Failed to fetch gallery");
   }
 }

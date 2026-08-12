@@ -1,31 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { galleryImages } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { prisma } from "@/db";
+import { requireApiAuth, jsonError, isNotFoundError } from "@/lib/api";
+import { deleteR2Object } from "@/lib/r2";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authError = await requireApiAuth();
+    if (authError) return authError;
+
     const { id } = await params;
     const body = await request.json();
-    const allowed: Record<string, unknown> = {};
-    const fields = ["cloudinaryId", "url", "thumbnailUrl", "width", "height", "alt", "category", "featured", "order"] as const;
+    const data: Record<string, unknown> = {};
+    const fields = ["storageKey", "url", "thumbnailUrl", "width", "height", "alt", "category", "featured", "order"] as const;
     for (const f of fields) {
-      if (f in body) allowed[f] = body[f];
+      if (f in body) data[f] = body[f];
     }
-    const [result] = await db
-      .update(galleryImages)
-      .set(allowed)
-      .where(eq(galleryImages.id, parseInt(id, 10)))
-      .returning();
+    const result = await prisma.galleryImage.update({
+      where: { id: parseInt(id, 10) },
+      data,
+    });
     return NextResponse.json(result);
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to update image" },
-      { status: 500 }
-    );
+  } catch (err) {
+    if (isNotFoundError(err)) return jsonError("Not found", 404);
+    return jsonError("Failed to update image");
   }
 }
 
@@ -34,15 +34,21 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authError = await requireApiAuth();
+    if (authError) return authError;
+
     const { id } = await params;
-    await db
-      .delete(galleryImages)
-      .where(eq(galleryImages.id, parseInt(id, 10)));
+    const image = await prisma.galleryImage.findUnique({
+      where: { id: parseInt(id, 10) },
+    });
+    if (!image) return jsonError("Not found", 404);
+
+    await prisma.galleryImage.delete({ where: { id: image.id } });
+    await deleteR2Object(image.storageKey);
+
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to delete image" },
-      { status: 500 }
-    );
+  } catch (err) {
+    if (isNotFoundError(err)) return jsonError("Not found", 404);
+    return jsonError("Failed to delete image");
   }
 }

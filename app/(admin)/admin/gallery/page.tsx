@@ -47,46 +47,71 @@ export default function GalleryPage() {
 
     setUploading(true);
     try {
-      const sigRes = await fetch("/api/upload", { method: "POST" });
-      const { timestamp, signature, cloudName, apiKey } = await sigRes.json();
+      let uploadedCount = 0;
 
       for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("timestamp", timestamp.toString());
-        formData.append("signature", signature);
-        formData.append("api_key", apiKey);
-        formData.append("folder", "arni-photography");
+        try {
+          const sigRes = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              filename: file.name,
+              contentType: file.type || "application/octet-stream",
+              kind: "image",
+            }),
+          });
+          if (!sigRes.ok) throw new Error("Upload URL failed");
+          const { key, uploadUrl, publicUrl } = await sigRes.json();
 
-        const uploadRes = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-          { method: "POST", body: formData }
-        );
-        const uploaded = await uploadRes.json();
+          const putRes = await fetch(uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": file.type },
+            body: file,
+          });
+          if (!putRes.ok) throw new Error("R2 upload failed");
 
-        await fetch("/api/gallery", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            cloudinaryId: uploaded.public_id,
-            url: uploaded.secure_url,
-            thumbnailUrl: uploaded.secure_url.replace("/upload/", "/upload/w_400,h_300,c_fill/"),
-            width: uploaded.width,
-            height: uploaded.height,
-            alt: "",
-            category: "wedding",
-            featured: false,
-            order: images.length,
-          }),
-        });
+          const dimensions = await new Promise<{ width: number; height: number } | null>(
+            (resolve) => {
+              const img = new Image();
+              img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+              img.onerror = () => resolve(null);
+              img.src = publicUrl;
+            }
+          );
+
+          await fetch("/api/gallery", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              storageKey: key,
+              url: publicUrl,
+              thumbnailUrl: null,
+              width: dimensions?.width ?? null,
+              height: dimensions?.height ?? null,
+              alt: "",
+              category: "wedding",
+              featured: false,
+              order: images.length + uploadedCount,
+            }),
+          });
+          uploadedCount++;
+        } catch {
+          // Skip files that fail individually so one bad file
+          // doesn't abort the whole batch.
+        }
       }
 
-      toast.success(`${files.length} image(s) uploaded`);
-      loadImages();
+      if (uploadedCount > 0) {
+        toast.success(`${uploadedCount} image(s) uploaded`);
+        loadImages();
+      } else {
+        toast.error("Upload failed");
+      }
     } catch {
       toast.error("Upload failed");
     } finally {
       setUploading(false);
+      e.target.value = "";
     }
   };
 

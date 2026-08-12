@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model GalleryImage {
+  id           Int      @id @default(autoincrement())
+  storageKey   String   @map("cloudinary_id")
+  url          String
+  thumbnailUrl String?  @map("thumbnail_url")
+  width        Int?
+  height       Int?
+  alt          String   @default("")
+  category     String   @default("wedding")
+  featured     Boolean  @default(false)
+  order        Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("gallery_images")
+}
+
+model Service {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String  @default("")
+  slug        String  @unique
+  icon        String  @default("camera")
+  imageUrl    String? @map("image_url")
+  order       Int     @default(0)
+
+  @@map("services")
+}
+
+model Testimonial {
+  id         Int     @id @default(autoincrement())
+  clientName String  @map("client_name")
+  event      String  @default("")
+  rating     Int     @default(5)
+  text       String
+  avatarUrl  String? @map("avatar_url")
+
+  @@map("testimonials")
+}
+
+model Post {
+  id          Int      @id @default(autoincrement())
+  title       String
+  slug        String   @unique
+  excerpt     String   @default("")
+  content     String   @default("")
+  coverImage  String?  @map("cover_image")
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("posts")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String   @default("")
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("messages")
+}
+
+model Film {
+  id           Int      @id @default(autoincrement())
+  title        String   @default("")
+  description  String   @default("")
+  videoUrl     String   @map("video_url")
+  thumbnailUrl String?  @map("thumbnail_url")
+  category     String   @default("modern")
+  featured     Boolean  @default(false)
+  order        Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("films")
+}
+
+model SiteSetting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String @default("")
+
+  @@map("site_settings")
+}

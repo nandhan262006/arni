@@ -1,31 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { films } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { prisma } from "@/db";
+import { requireApiAuth, jsonError, isNotFoundError } from "@/lib/api";
+import { deleteR2ObjectByUrl } from "@/lib/r2";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authError = await requireApiAuth();
+    if (authError) return authError;
+
     const { id } = await params;
     const body = await request.json();
-    const allowed: Record<string, unknown> = {};
+    const data: Record<string, unknown> = {};
     const fields = ["title", "description", "videoUrl", "thumbnailUrl", "category", "featured", "order"] as const;
     for (const f of fields) {
-      if (f in body) allowed[f] = body[f];
+      if (f in body) data[f] = body[f];
     }
-    const [result] = await db
-      .update(films)
-      .set(allowed)
-      .where(eq(films.id, parseInt(id, 10)))
-      .returning();
+    const result = await prisma.film.update({
+      where: { id: parseInt(id, 10) },
+      data,
+    });
     return NextResponse.json(result);
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to update film" },
-      { status: 500 }
-    );
+  } catch (err) {
+    if (isNotFoundError(err)) return jsonError("Not found", 404);
+    return jsonError("Failed to update film");
   }
 }
 
@@ -34,13 +34,24 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authError = await requireApiAuth();
+    if (authError) return authError;
+
     const { id } = await params;
-    await db.delete(films).where(eq(films.id, parseInt(id, 10)));
+    const film = await prisma.film.findUnique({
+      where: { id: parseInt(id, 10) },
+    });
+    if (!film) return jsonError("Not found", 404);
+
+    await prisma.film.delete({ where: { id: film.id } });
+    await deleteR2ObjectByUrl(film.videoUrl);
+    if (film.thumbnailUrl) {
+      await deleteR2ObjectByUrl(film.thumbnailUrl);
+    }
+
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to delete film" },
-      { status: 500 }
-    );
+  } catch (err) {
+    if (isNotFoundError(err)) return jsonError("Not found", 404);
+    return jsonError("Failed to delete film");
   }
 }

@@ -3,12 +3,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
-interface Setting {
-  id: number;
-  key: string;
-  value: string;
-}
-
 const SETTING_FIELDS = [
   { key: "hero_title", label: "Hero Title", type: "text" as const },
   { key: "hero_subtitle", label: "Hero Subtitle", type: "text" as const },

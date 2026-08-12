@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { posts } from "@/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { prisma } from "@/db";
+import { requireApiAuth, jsonError } from "@/lib/api";
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,33 +8,35 @@ export async function GET(request: NextRequest) {
     const published = searchParams.get("published");
     const all = searchParams.get("all");
 
-    const query = db.select().from(posts).orderBy(desc(posts.createdAt));
-
-    if (!all && published !== "true") {
-      return NextResponse.json(await query);
-    }
-
-    if (published === "true") {
-      const result = await db
-        .select()
-        .from(posts)
-        .where(eq(posts.published, true))
-        .orderBy(desc(posts.createdAt));
+    if (all !== "true" && published !== "true") {
+      const result = await prisma.post.findMany({
+        orderBy: { createdAt: "desc" },
+      });
       return NextResponse.json(result);
     }
 
-    const result = await query;
+    if (published === "true") {
+      const result = await prisma.post.findMany({
+        where: { published: true },
+        orderBy: { createdAt: "desc" },
+      });
+      return NextResponse.json(result);
+    }
+
+    const result = await prisma.post.findMany({
+      orderBy: { createdAt: "desc" },
+    });
     return NextResponse.json(result);
   } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch posts" },
-      { status: 500 }
-    );
+    return jsonError("Failed to fetch posts");
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const authError = await requireApiAuth();
+    if (authError) return authError;
+
     const body = await request.json();
     const slug =
       body.slug ||
@@ -45,20 +46,19 @@ export async function POST(request: NextRequest) {
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/(^-|-$)/g, "")
         : "");
-    const allowed = {
-      title: body.title,
-      slug,
-      excerpt: body.excerpt ?? "",
-      content: body.content ?? "",
-      coverImage: body.coverImage ?? null,
-      published: body.published ?? false,
-    };
-    const [result] = await db.insert(posts).values(allowed).returning();
+
+    const result = await prisma.post.create({
+      data: {
+        title: body.title,
+        slug,
+        excerpt: body.excerpt ?? "",
+        content: body.content ?? "",
+        coverImage: body.coverImage ?? null,
+        published: body.published ?? false,
+      },
+    });
     return NextResponse.json(result, { status: 201 });
   } catch {
-    return NextResponse.json(
-      { error: "Failed to create post" },
-      { status: 500 }
-    );
+    return jsonError("Failed to create post");
   }
 }

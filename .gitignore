@@ -36,6 +36,9 @@ yarn-error.log*
 # local database
 local.db
 
+# generated prisma client
+/generated/
+
 # large media files - host externally for production
 public/videos/
 

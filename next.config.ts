@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const videoCdnUrl = process.env.VIDEO_CDN_URL?.replace(/\/+$/, "");
 
+const r2PublicUrl = process.env.R2_PUBLIC_URL?.replace(/\/+$/, "");
+const r2Hostname = r2PublicUrl ? new URL(r2PublicUrl).hostname : null;
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
@@ -17,6 +20,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "arniphotography.in",
       },
+      ...(r2Hostname
+        ? [
+            {
+              protocol: "https" as const,
+              hostname: r2Hostname,
+            },
+          ]
+        : []),
     ],
   },
   async headers() {

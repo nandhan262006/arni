@@ -1,19 +1,16 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { siteSettings } from "@/db/schema";
+import { prisma } from "@/db";
+import { jsonError } from "@/lib/api";
 
 export async function GET() {
   try {
-    const result = await db.select().from(siteSettings);
+    const result = await prisma.siteSetting.findMany();
     const settingsMap: Record<string, string> = {};
     for (const s of result) {
       settingsMap[s.key] = s.value;
     }
     return NextResponse.json(settingsMap);
   } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch settings" },
-      { status: 500 }
-    );
+    return jsonError("Failed to fetch settings");
   }
 }

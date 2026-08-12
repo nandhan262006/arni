@@ -19,6 +19,7 @@ export default function FilmsAdminPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Film | null>(null);
+  const [uploading, setUploading] = useState<"video" | "thumbnail" | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -35,6 +36,55 @@ export default function FilmsAdminPage() {
       .then((data) => setFilms(Array.isArray(data) ? data : []))
       .finally(() => setLoading(false));
   }, []);
+
+  const uploadToR2 = async (file: File, kind: "video" | "image") => {
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        filename: file.name,
+        contentType: file.type || "application/octet-stream",
+        kind: kind === "video" ? "video" : "image",
+      }),
+    });
+    if (!res.ok) throw new Error("Upload URL failed");
+    const { uploadUrl, publicUrl } = await res.json();
+
+    const putRes = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!putRes.ok) throw new Error("R2 upload failed");
+
+    return publicUrl;
+  };
+
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    target: "video" | "thumbnail"
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(target);
+    try {
+      const url = await uploadToR2(
+        file,
+        target === "thumbnail" ? "image" : "video"
+      );
+      if (target === "video") {
+        setForm((f) => ({ ...f, videoUrl: url }));
+      } else {
+        setForm((f) => ({ ...f, thumbnailUrl: url }));
+      }
+      toast.success(target === "video" ? "Video uploaded" : "Thumbnail uploaded");
+    } catch {
+      toast.error(`${target === "video" ? "Video" : "Thumbnail"} upload failed`);
+    } finally {
+      setUploading(null);
+      e.target.value = "";
+    }
+  };
 
   const resetForm = () => {
     setForm({ title: "", description: "", videoUrl: "", thumbnailUrl: "", category: "modern", featured: false, order: 0 });
@@ -123,19 +173,47 @@ export default function FilmsAdminPage() {
               <option value="intimates">Intimates</option>
               <option value="cinematic">Cinematic</option>
             </select>
-            <input
-              value={form.videoUrl}
-              onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
-              placeholder="Video URL"
-              className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-cream"
-              required
-            />
-            <input
-              value={form.thumbnailUrl}
-              onChange={(e) => setForm({ ...form, thumbnailUrl: e.target.value })}
-              placeholder="Thumbnail URL (optional)"
-              className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-cream"
-            />
+            <div>
+              <div className="flex gap-2">
+                <input
+                  value={form.videoUrl}
+                  onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
+                  placeholder="Video URL"
+                  className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-cream"
+                  required
+                />
+                <label className="px-3 py-2 bg-surface-alt border border-border rounded-lg text-sm text-cream cursor-pointer whitespace-nowrap hover:bg-surface transition-colors">
+                  {uploading === "video" ? "Uploading..." : "Upload"}
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => handleFileUpload(e, "video")}
+                    className="hidden"
+                    disabled={uploading !== null}
+                  />
+                </label>
+              </div>
+            </div>
+            <div>
+              <div className="flex gap-2">
+                <input
+                  value={form.thumbnailUrl}
+                  onChange={(e) => setForm({ ...form, thumbnailUrl: e.target.value })}
+                  placeholder="Thumbnail URL (optional)"
+                  className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-cream"
+                />
+                <label className="px-3 py-2 bg-surface-alt border border-border rounded-lg text-sm text-cream cursor-pointer whitespace-nowrap hover:bg-surface transition-colors">
+                  {uploading === "thumbnail" ? "Uploading..." : "Upload"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, "thumbnail")}
+                    className="hidden"
+                    disabled={uploading !== null}
+                  />
+                </label>
+              </div>
+            </div>
           </div>
           <textarea
             value={form.description}

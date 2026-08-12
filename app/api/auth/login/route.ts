@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { prisma } from "@/db";
 import { verifyPassword, createToken, setSessionCookie } from "@/lib/auth";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
@@ -22,20 +20,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { username, password } = await request.json();
+    const { password } = await request.json();
 
-    if (!username || !password) {
+    if (!password || typeof password !== "string") {
       return NextResponse.json(
-        { error: "Username and password are required" },
+        { error: "Password is required" },
         { status: 400 }
       );
     }
 
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, username))
-      .limit(1);
+    const user = await prisma.user.findFirst({ orderBy: { id: "asc" } });
 
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       return NextResponse.json(

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { messages } from "@/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { prisma } from "@/db";
+import { requireApiAuth, jsonError } from "@/lib/api";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 const MESSAGE_RATE_LIMIT = 5;
@@ -21,28 +20,19 @@ interface ContactBody {
 
 export async function GET(request: NextRequest) {
   try {
+    const authError = await requireApiAuth();
+    if (authError) return authError;
+
     const { searchParams } = new URL(request.url);
     const unreadOnly = searchParams.get("unread");
 
-    if (unreadOnly === "true") {
-      const result = await db
-        .select()
-        .from(messages)
-        .where(eq(messages.read, false))
-        .orderBy(desc(messages.createdAt));
-      return NextResponse.json(result);
-    }
-
-    const result = await db
-      .select()
-      .from(messages)
-      .orderBy(desc(messages.createdAt));
+    const result = await prisma.message.findMany({
+      where: unreadOnly === "true" ? { read: false } : undefined,
+      orderBy: { createdAt: "desc" },
+    });
     return NextResponse.json(result);
   } catch {
-    return NextResponse.json(
-      { error: "Failed to fetch messages" },
-      { status: 500 }
-    );
+    return jsonError("Failed to fetch messages");
   }
 }
 
@@ -92,15 +82,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const [result] = await db
-      .insert(messages)
-      .values({ name, email, phone, message })
-      .returning();
+    const result = await prisma.message.create({
+      data: { name, email, phone, message },
+    });
     return NextResponse.json(result, { status: 201 });
   } catch {
-    return NextResponse.json(
-      { error: "Failed to send message" },
-      { status: 500 }
-    );
+    return jsonError("Failed to send message");
   }
 }
