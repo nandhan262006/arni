@@ -13,6 +13,12 @@ const gallerySample = Array.from({ length: 20 }, (_, i) => {
   return `/images/gallery/${String(i + 1).padStart(2, "0")}.${ext}`;
 });
 
+const DEFAULT_HERO_IMAGES = [
+  "/images/hero/01.jpg",
+  "/images/hero/02.webp",
+  "/images/hero/03.webp",
+];
+
 const testimonials = [
   {
     name: "Priya & Rahul",
@@ -72,7 +78,7 @@ function AnimatedCounter({ value, suffix = "" }: { value: string; suffix?: strin
 
 export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const heroImages = ["/images/hero/01.jpg", "/images/hero/02.webp", "/images/hero/03.webp"];
+  const [heroImages, setHeroImages] = useState(DEFAULT_HERO_IMAGES);
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -83,11 +89,25 @@ export default function HomePage() {
   const heroTextY = useTransform(scrollYProgress, [0, 1], [0, 100]);
 
   useEffect(() => {
+    fetch("/api/public/hero-images")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const urls = data
+            .map((img: { url: string }) => img.url)
+            .filter((u: string) => typeof u === "string" && u.length > 0);
+          if (urls.length > 0) setHeroImages(urls);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroImages.length);
     }, 6000);
     return () => clearInterval(interval);
-  }, []);
+  }, [heroImages.length]);
 
   return (
     <div>

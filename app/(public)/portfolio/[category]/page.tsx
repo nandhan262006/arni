@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card3D } from "@/components/ui/card-3d";
 
-const categories: Record<string, { label: string; description: string; image: string }> = {
+const FALLBACK_CATEGORIES: Record<string, { label: string; description: string; image: string }> = {
   wedding: {
     label: "Wedding Photos",
     description: "Timeless frames that capture every sacred ritual, stolen glance, and joyful tear.",
@@ -34,22 +34,61 @@ const allImages = Array.from({ length: 20 }, (_, i) => {
   const ext = i === 1 || i === 4 || i === 8 ? "webp" : "jpg";
   return {
     src: `/images/gallery/${String(i + 1).padStart(2, "0")}.${ext}`,
-    category: ["wedding", "seemantham", "reception", "preshoot"][i % 4] as keyof typeof categories,
+    category: ["wedding", "seemantham", "reception", "preshoot"][i % 4],
   };
 });
+
+interface GalleryImage {
+  id: number;
+  url: string;
+  thumbnailUrl: string | null;
+  alt: string;
+  category: string;
+}
+
+interface Category {
+  name: string;
+  slug: string;
+}
 
 export default function PortfolioPage() {
   const params = useParams();
   const category = params.category as string;
-  const cat = categories[category] || categories.wedding;
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [gallery, setGallery] = useState<GalleryImage[]>([]);
+  const [categoryNav, setCategoryNav] = useState<Category[]>([]);
 
-  const filtered = allImages.filter((img) => img.category === category);
+  const fallbackCategory = FALLBACK_CATEGORIES[category] || FALLBACK_CATEGORIES.wedding;
+  const cat = {
+    label: categoryNav.find((item) => item.slug === category)?.name || fallbackCategory.label,
+    description: fallbackCategory.description,
+    image: fallbackCategory.image,
+  };
 
-  const categoryNav = Object.entries(categories).map(([slug, data]) => ({
-    slug,
-    label: data.label,
-  }));
+  useEffect(() => {
+    fetch("/api/public/categories?type=gallery")
+      .then((response) => response.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) setCategoryNav(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch(`/api/public/gallery?category=${encodeURIComponent(category)}`)
+      .then((response) => response.json())
+      .then((data) => setGallery(Array.isArray(data) ? data : []))
+      .catch(() => setGallery([]));
+  }, [category]);
+
+  const filtered = gallery.length > 0
+    ? gallery.map((image) => ({ src: image.thumbnailUrl || image.url, alt: image.alt }))
+    : allImages
+        .filter((image) => image.category === category)
+        .map((image) => ({ src: image.src, alt: "" }));
+  const navigation = categoryNav.length > 0
+    ? categoryNav.map((item) => ({ slug: item.slug, label: item.name }))
+    : Object.entries(FALLBACK_CATEGORIES).map(([slug, data]) => ({ slug, label: data.label }));
 
   return (
     <div className="pt-32 pb-24">
@@ -87,7 +126,7 @@ export default function PortfolioPage() {
       <div className="max-w-7xl mx-auto px-4">
         {/* Category tabs */}
         <div className="flex justify-center gap-2 mb-14 flex-wrap">
-          {categoryNav.map((nav) => (
+          {navigation.map((nav) => (
             <Link
               key={nav.slug}
               href={`/portfolio/${nav.slug}`}
@@ -126,7 +165,7 @@ export default function PortfolioPage() {
                   <div className="glass rounded-xl overflow-hidden img-zoom group relative">
                     <img
                       src={img.src}
-                      alt={`${cat.label} ${i + 1}`}
+                      alt={img.alt || `${cat.label} ${i + 1}`}
                       className="w-full h-auto block"
                       loading="lazy"
                     />

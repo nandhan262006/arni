@@ -13,7 +13,7 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
     const data: Record<string, unknown> = {};
-    const fields = ["title", "description", "slug", "icon", "imageUrl", "order"] as const;
+    const fields = ["title", "description", "slug", "icon", "imageUrl", "category", "order"] as const;
     for (const f of fields) {
       if (f in body) data[f] = body[f];
     }

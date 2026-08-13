@@ -30,6 +30,31 @@ async function seed() {
     console.log("Admin user already exists");
   }
 
+  const categories = [
+    ["gallery", "Wedding", "wedding"],
+    ["gallery", "Seemantham", "seemantham"],
+    ["gallery", "Reception", "reception"],
+    ["gallery", "Pre Shoot", "preshoot"],
+    ["gallery", "Other", "other"],
+    ["films", "Modern", "modern"],
+    ["films", "Classic", "classic"],
+    ["films", "Intimates", "intimates"],
+    ["films", "Cinematic", "cinematic"],
+    ["services", "Wedding", "wedding"],
+    ["services", "Seemantham", "seemantham"],
+    ["services", "Reception", "reception"],
+    ["services", "Pre Shoot", "preshoot"],
+    ["services", "Other", "other"],
+  ] as const;
+
+  for (const [order, [type, name, slug]] of categories.entries()) {
+    await prisma.category.upsert({
+      where: { type_slug: { type, slug } },
+      update: { name },
+      create: { type, name, slug, order },
+    });
+  }
+
   await prisma.$disconnect();
 }
 

@@ -4,12 +4,12 @@ import { requireApiAuth, jsonError } from "@/lib/api";
 
 export async function GET() {
   try {
-    const result = await prisma.service.findMany({
-      orderBy: { order: "asc" },
+    const result = await prisma.heroImage.findMany({
+      orderBy: [{ order: "asc" }, { id: "asc" }],
     });
     return NextResponse.json(result);
   } catch {
-    return jsonError("Failed to fetch services");
+    return jsonError("Failed to fetch hero images");
   }
 }
 
@@ -19,19 +19,17 @@ export async function POST(request: NextRequest) {
     if (authError) return authError;
 
     const body = await request.json();
-    const result = await prisma.service.create({
+    const result = await prisma.heroImage.create({
       data: {
-        title: body.title,
-        description: body.description ?? "",
-        slug: body.slug,
-        icon: body.icon ?? "camera",
-        imageUrl: body.imageUrl ?? null,
-        category: body.category ?? "",
+        storageKey: body.storageKey,
+        url: body.url,
+        alt: body.alt ?? "",
+        active: body.active ?? true,
         order: body.order ?? 0,
       },
     });
     return NextResponse.json(result, { status: 201 });
   } catch {
-    return jsonError("Failed to create service");
+    return jsonError("Failed to create hero image");
   }
 }

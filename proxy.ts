@@ -3,6 +3,8 @@ import { verifyToken } from "@/lib/auth";
 
 const ADMIN_PATHS = [
   "/api/gallery",
+  "/api/hero-images",
+  "/api/categories",
   "/api/films",
   "/api/services",
   "/api/testimonials",
@@ -51,5 +53,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/gallery/:path*", "/api/films/:path*", "/api/services/:path*", "/api/testimonials/:path*", "/api/posts/:path*", "/api/messages/:path*", "/api/settings/:path*", "/api/upload/:path*"],
+  matcher: ["/admin/:path*", "/api/gallery/:path*", "/api/hero-images/:path*", "/api/categories/:path*", "/api/films/:path*", "/api/services/:path*", "/api/testimonials/:path*", "/api/posts/:path*", "/api/messages/:path*", "/api/settings/:path*", "/api/upload/:path*"],
 };

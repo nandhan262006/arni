@@ -14,12 +14,15 @@ interface Film {
   order: number;
 }
 
+const DEFAULT_CATEGORIES = ["modern", "classic", "intimates", "cinematic"];
+
 export default function FilmsAdminPage() {
   const [films, setFilms] = useState<Film[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Film | null>(null);
   const [uploading, setUploading] = useState<"video" | "thumbnail" | null>(null);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -35,6 +38,17 @@ export default function FilmsAdminPage() {
       .then((r) => r.json())
       .then((data) => setFilms(Array.isArray(data) ? data : []))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/categories?type=films")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setCategories(data.map((category: { slug: string }) => category.slug));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const uploadToR2 = async (file: File, kind: "video" | "image") => {
@@ -168,10 +182,11 @@ export default function FilmsAdminPage() {
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-cream"
             >
-              <option value="modern">Modern</option>
-              <option value="classic">Classic</option>
-              <option value="intimates">Intimates</option>
-              <option value="cinematic">Cinematic</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </option>
+              ))}
             </select>
             <div>
               <div className="flex gap-2">

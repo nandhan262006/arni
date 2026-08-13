@@ -39,6 +39,7 @@ model Service {
   slug        String  @unique
   icon        String  @default("camera")
   imageUrl    String? @map("image_url")
+  category    String  @default("")
   order       Int     @default(0)
 
   @@map("services")
@@ -101,4 +102,27 @@ model SiteSetting {
   value String @default("")
 
   @@map("site_settings")
+}
+
+model HeroImage {
+  id         Int      @id @default(autoincrement())
+  storageKey String   @map("storage_key")
+  url        String
+  alt        String   @default("")
+  active     Boolean  @default(true)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("hero_images")
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  slug  String
+  type  String
+  order Int    @default(0)
+
+  @@unique([type, slug])
+  @@map("categories")
 }

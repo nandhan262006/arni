@@ -14,13 +14,14 @@ interface GalleryImage {
   order: number;
 }
 
-const CATEGORIES = ["wedding", "seemantham", "reception", "preshoot", "other"];
+const DEFAULT_CATEGORIES = ["wedding", "seemantham", "reception", "preshoot", "other"];
 
 export default function GalleryPage() {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ alt: "", category: "", featured: false, order: 0 });
 
@@ -40,6 +41,17 @@ export default function GalleryPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadImages();
   }, [loadImages]);
+
+  useEffect(() => {
+    fetch("/api/categories?type=gallery")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setCategories(data.map((category: { slug: string }) => category.slug));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -89,7 +101,7 @@ export default function GalleryPage() {
               width: dimensions?.width ?? null,
               height: dimensions?.height ?? null,
               alt: "",
-              category: "wedding",
+              category: categories[0] ?? "wedding",
               featured: false,
               order: images.length + uploadedCount,
             }),
@@ -161,7 +173,7 @@ export default function GalleryPage() {
       </div>
 
       <div className="flex gap-2 mb-6 flex-wrap">
-        {["all", ...CATEGORIES].map((cat) => (
+        {["all", ...categories].map((cat) => (
           <button
             key={cat}
             onClick={() => setFilter(cat)}
@@ -217,7 +229,7 @@ export default function GalleryPage() {
                       onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                       className="w-full px-2 py-1 bg-surface border border-border rounded text-sm text-cream"
                     >
-                      {CATEGORIES.map((c) => (
+                      {categories.map((c) => (
                         <option key={c} value={c}>{c}</option>
                       ))}
                     </select>

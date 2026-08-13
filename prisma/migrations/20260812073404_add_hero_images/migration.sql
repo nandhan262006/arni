@@ -1,0 +1,10 @@
+-- CreateTable
+CREATE TABLE "hero_images" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "storage_key" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "alt" TEXT NOT NULL DEFAULT '',
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

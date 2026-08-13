@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import CategoryManager from "@/components/admin/category-manager";
 
 const SETTING_FIELDS = [
   { key: "hero_title", label: "Hero Title", type: "text" as const },
@@ -121,6 +122,10 @@ export default function SettingsPage() {
             )}
           </div>
         ))}
+      </div>
+
+      <div className="mt-10">
+        <CategoryManager />
       </div>
     </div>
   );
